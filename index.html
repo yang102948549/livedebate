@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<hang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
+<title>실시간 찬반 토론</title>
+<link rel="stylesheet" as="style" crossorigin
+  href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+<style>
+:root{
+  --bg:#F5F5F7; --surface:#FFFFFF; --surface-2:#FBFBFD;
+  --ink:#1D1D1F; --ink-2:#6E6E73; --ink-3:#A1A1A6;
+  --hairline:rgba(0,0,0,.09);
+  --blue:#0071E3; --blue-press:#0060BF;
+  --pro:#007AFF; --pro-soft:#EAF2FF;
+  --con:#F2604A; --con-soft:#FDEDE9; --con-ink:#C64A34;
+  --ai-bubble:#E9E9EB; --me-bubble:#007AFF;
+  --r-card:20px; --r-btn:14px; --r-modal:22px; --r-pill:980px;
+  --sh-card:0 1px 3px rgba(0,0,0,.04), 0 8px 24px rgba(0,0,0,.05);
+  --sh-pop:0 24px 70px rgba(0,0,0,.28);
+  --ease:cubic-bezier(.32,.72,0,1);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{
+  font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,
+    "Apple SD Gothic Neo","Segoe UI",system-ui,sans-serif;
+  background:var(--bg); color:var(--ink);
+  font-size:17px; line-height:1.47; letter-spacing:-.01em; -webkit-font-smoothing:antialiased;
+  display:grid; place-items:center; min-height:100dvh; padding:20px;
+}
+h1,h2,h3,p{margin:0}
+button{font:inherit}
+:focus-visible{outline:2px solid var(--blue); outline-offset:2px; border-radius:6px}
+
+/* ── app shell : 초기/토론 공통 배율 ── */
+.app-shell{
+  width:100%; max-width:460px; height:min(760px, calc(100dvh - 40px));
+  background:var(--surface); border-radius:34px; border:1px solid var(--hairline);
+  box-shadow:var(--sh-card); overflow:hidden; display:flex; flex-direction:column; position:relative;
+}
+.screen{display:none; flex-direction:column; height:100%}
+.app-shell[data-state="home"] .screen--home{display:flex; animation:screenIn .45s var(--ease)}
+.app-shell[data-state="live"] .screen--live{display:flex; animation:screenIn .45s var(--ease)}
+@keyframes screenIn{from{opacity:0; transform:translateY(6px)} to{opacity:1; transform:none}}
+
+/* ── top bar (공통 높이) ── */
+.bar{height:56px; flex-shrink:0; display:flex; align-items:center; gap:12px;
+  padding:0 16px; border-bottom:1px solid var(--hairline)}
+.bar__title{font-size:16px; font-weight:700; letter-spacing:-.01em; overflow:hidden}
+.bar__title span{display:block; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; max-width:210px}
+.bar__title small{display:block; font-size:11px; font-weight:600; color:var(--ink-3)}
+.bar__spacer{flex:1}
+.icon-btn{width:34px; height:34px; border:0; background:#F0F0F2; border-radius:50%;
+  display:grid; place-items:center; cursor:pointer; color:var(--ink-2); font-size:15px; transition:.2s}
+.icon-btn:active{transform:scale(.92)}
+.stance-chip{font-size:12px; font-weight:700; padding:5px 10px; border-radius:var(--r-pill); white-space:nowrap}
+.stance-chip--pro{background:var(--pro-soft); color:var(--pro)}
+.stance-chip--con{background:var(--con-soft); color:var(--con-ink)}
+
+/* ── HOME ── */
+.screen--home .body{flex:1; overflow:auto; padding:22px 20px 16px}
+.home-hero h2{font-size:26px; font-weight:800; letter-spacing:-.02em}
+.home-hero p{font-size:15px; color:var(--ink-2); margin-top:6px}
+.cat-label{font-size:12px; font-weight:700; color:var(--ink-3); margin:20px 4px 10px; letter-spacing:.02em}
+.cat-label:first-of-type{margin-top:16px}
+.topic-card{width:100%; text-align:left; background:var(--surface-2); border:1px solid var(--hairline);
+  border-radius:var(--r-card); padding:15px 16px; margin-bottom:10px; cursor:pointer;
+  display:flex; align-items:center; gap:12px; transition:.2s var(--ease)}
+.topic-card:hover{transform:translateY(-1px); box-shadow:var(--sh-card); border-color:rgba(0,0,0,.14)}
+.topic-card[aria-selected="true"]{border-color:var(--blue); box-shadow:0 0 0 3px rgba(0,113,227,.14)}
+.topic-card__emoji{font-size:20px; width:40px; height:40px; flex-shrink:0; border-radius:12px;
+  background:var(--surface); display:grid; place-items:center; border:1px solid var(--hairline)}
+.topic-card__txt{font-size:15.5px; font-weight:600; letter-spacing:-.01em; line-height:1.35}
+.topic-card__chev{margin-left:auto; color:var(--ink-3); flex-shrink:0}
+.home-empty{color:var(--ink-3); font-size:14px; text-align:center; padding:40px 10px}
+
+/* split 찬성/반대 dock */
+.split-dock{flex-shrink:0; padding:14px 20px calc(18px + env(safe-area-inset-bottom));
+  border-top:1px solid var(--hairline); background:rgba(255,255,255,.86);
+  backdrop-filter:saturate(180%) blur(20px); -webkit-backdrop-filter:saturate(180%) blur(20px)}
+.split-dock[hidden]{display:none}
+.split-dock__q{font-size:13px; color:var(--ink-2); text-align:center; margin-bottom:11px}
+.split-dock__q b{color:var(--ink); font-weight:700}
+.split{display:grid; grid-template-columns:1fr 1fr; gap:11px}
+.split button{border:0; cursor:pointer; padding:16px 0; border-radius:var(--r-btn);
+  font-size:17px; font-weight:700; letter-spacing:-.01em; transition:.18s var(--ease); color:#fff}
+.split button:active{transform:scale(.97)}
+.split .pro{background:var(--pro)} .split .con{background:var(--con)}
+.split button small{display:block; font-size:11px; font-weight:600; opacity:.9; margin-top:2px}
+
+/* ── LIVE ── */
+.live-status{flex-shrink:0; display:flex; align-items:center; justify-content:center; gap:10px; padding:12px 0 6px}
+.pill{display:inline-flex; align-items:center; gap:8px; background:#F0F0F2; color:var(--ink-2);
+  font-size:13px; font-weight:600; padding:7px 14px; border-radius:var(--r-pill)}
+.dot{width:8px; height:8px; border-radius:50%; background:var(--ink-3)}
+.pill[data-mode="listen"] .dot{background:#34C759; animation:pulse 1.4s infinite}
+.pill[data-mode="speak"] .dot{background:var(--blue); animation:pulse 1s infinite}
+.pill[data-mode="connect"] .dot{background:var(--ink-3)}
+@keyframes pulse{0%,100%{opacity:1; transform:scale(1)} 50%{opacity:.35; transform:scale(.7)}}
+.time-chip{font-size:12px; font-weight:600; color:var(--ink-3); font-variant-numeric:tabular-nums}
+.spinner{width:15px; height:15px; border-radius:50%; border:2px solid rgba(0,0,0,.15);
+  border-top-color:var(--blue); animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.transcript{flex:1; overflow:auto; padding:6px 16px 12px; display:flex; flex-direction:column; gap:2px}
+.turn{display:flex; flex-direction:column; margin-top:12px}
+.turn--me{align-items:flex-end} .turn--ai{align-items:flex-start}
+.turn__who{font-size:11px; font-weight:700; color:var(--ink-3); margin:0 6px 5px}
+.bubble{max-width:80%; padding:10px 14px; font-size:15.5px; line-height:1.42; letter-spacing:-.01em;
+  border-radius:20px; word-break:break-word; white-space:pre-wrap; animation:bubbleIn .3s var(--ease)}
+.turn--ai .bubble{background:var(--ai-bubble); color:var(--ink); border-bottom-left-radius:7px}
+.turn--me .bubble{background:var(--me-bubble); color:#fff; border-bottom-right-radius:7px}
+@keyframes bubbleIn{from{opacity:0; transform:translateY(6px) scale(.98)} to{opacity:1; transform:none}}
+.hint{color:var(--ink-3); font-size:13px; text-align:center; margin:22px auto; max-width:26ch; line-height:1.5}
+
+.dock{flex-shrink:0; display:flex; align-items:center; justify-content:center; gap:20px;
+  padding:14px 20px calc(18px + env(safe-area-inset-bottom)); border-top:1px solid var(--hairline)}
+.dock__side{width:48px; height:48px; border-radius:50%; border:1px solid var(--hairline);
+  background:var(--surface-2); color:var(--ink-2); cursor:pointer; display:grid; place-items:center;
+  font-size:19px; transition:.2s}
+.dock__side:active{transform:scale(.92)}
+.dock__side:disabled{opacity:.4; cursor:default}
+.mic{width:72px; height:72px; border-radius:50%; border:0; background:var(--blue); color:#fff;
+  cursor:pointer; display:grid; place-items:center; font-size:26px; position:relative; transition:.2s var(--ease)}
+.mic:active{transform:scale(.94)}
+.mic:disabled{background:#C7C7CC; cursor:default}
+.mic[data-on="true"]{background:var(--con)}
+.mic[data-on="true"]::before{content:""; position:absolute; inset:-6px; border-radius:50%;
+  border:2px solid var(--con); opacity:.5; animation:ring 1.6s var(--ease) infinite}
+@keyframes ring{0%{transform:scale(.9); opacity:.6} 100%{transform:scale(1.35); opacity:0}}
+
+/* ── buttons ── */
+.btn{font-size:16px; font-weight:600; letter-spacing:-.01em; border-radius:var(--r-btn);
+  padding:12px 22px; cursor:pointer; border:1px solid transparent; transition:.18s var(--ease)}
+.btn:active{transform:scale(.97)}
+.btn--primary{background:var(--blue); color:#fff} .btn--primary:hover{background:var(--blue-press)}
+.btn--ghost{background:transparent; color:var(--blue); border-color:var(--hairline)}
+.btn--danger{background:var(--con-soft); color:var(--con-ink)}
+
+/* ── Apple modal ── */
+.scrim{position:fixed; inset:0; background:rgba(0,0,0,.32);
+  backdrop-filter:saturate(180%) blur(16px); -webkit-backdrop-filter:saturate(180%) blur(16px);
+  display:grid; place-items:center; padding:24px; opacity:0; pointer-events:none;
+  transition:opacity .28s var(--ease); z-index:50}
+.scrim[data-open="true"]{opacity:1; pointer-events:auto}
+.modal{width:100%; max-width:320px; background:var(--surface); border-radius:var(--r-modal);
+  box-shadow:var(--sh-pop); padding:24px 22px 18px; text-align:center;
+  transform:scale(.86); opacity:0; transition:transform .34s var(--ease), opacity .28s ease}
+.scrim[data-open="true"] .modal{transform:scale(1); opacity:1}
+.modal__icon{width:52px; height:52px; margin:0 auto 14px; border-radius:50%; display:grid;
+  place-items:center; font-size:22px; background:var(--pro-soft); color:var(--blue)}
+.modal__icon--warn{background:var(--con-soft); color:var(--con-ink)}
+.modal__title{font-size:19px; font-weight:700; letter-spacing:-.01em}
+.modal__msg{font-size:14px; color:var(--ink-2); margin-top:7px; line-height:1.5}
+.modal__actions{display:flex; flex-direction:column; gap:9px; margin-top:20px}
+.modal__actions .btn{width:100%; text-align:center}
+
+@media (max-width:520px){
+  body{padding:0}
+  .app-shell{max-width:none; height:100dvh; border-radius:0; border:0; box-shadow:none}
+  .bar__title span{max-width:190px}
+}
+@media (prefers-reduced-motion:reduce){ *{animation-duration:.001ms!important; transition-duration:.001ms!important} }
+</style>
+</head>
+<body>
+
+<div class="app-shell" id="shell" data-state="home">
+
+  <!-- ══ HOME ══ -->
+  <section class="screen screen--home">
+    <div class="bar">
+      <div class="bar__title"><span>찬반 토론</span><small>도덕 · 생각을 나누는 시간</small></div>
+      <div class="bar__spacer"></div>
+      <button class="icon-btn" id="reloadBtn" title="주제 새로고침" aria-label="주제 새로고침">⟳</button>
+    </div>
+    <div class="body">
+      <div class="home-hero">
+        <h2>오늘은 어떤<br/>주제로 토론할까요?</h2>
+        <p>주제를 고르면 입장을 정할 수 있어요.</p>
+      </div>
+      <div id="topicList"><div class="home-empty">주제를 불러오는 중…</div></div>
+    </div>
+    <div class="split-dock" id="splitDock" hidden>
+      <p class="split-dock__q">「<b id="pickedTopic"></b>」<br/>나의 입장은?</p>
+      <div class="split">
+        <button class="pro" id="pickPro">찬성<small>AI는 반대편이 됩니다</small></button>
+        <button class="con" id="pickCon">반대<small>AI는 찬성편이 됩니다</small></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ LIVE ══ -->
+  <section class="screen screen--live">
+    <div class="bar">
+      <button class="icon-btn" id="endBtn" title="종료" aria-label="토론 종료">✕</button>
+      <div class="bar__title"><span id="liveTopic">주제</span><small>실시간 음성 토론</small></div>
+      <div class="bar__spacer"></div>
+      <span class="stance-chip stance-chip--pro" id="liveStance">나 · 찬성</span>
+    </div>
+    <div class="live-status">
+      <span class="pill" id="statusPill" data-mode="connect">
+        <span class="dot" id="statusDot"></span><span id="statusTxt">연결 중…</span>
+      </span>
+      <span class="time-chip" id="timeChip" hidden>00:00</span>
+    </div>
+    <div class="transcript" id="transcript" aria-live="polite"></div>
+    <div class="dock">
+      <button class="dock__side" id="saveBtn" title="대화 저장" aria-label="대화 저장" disabled>⤓</button>
+      <button class="mic" id="micBtn" data-on="false" title="마이크" aria-label="마이크 켜기/끄기" disabled>🎙️</button>
+      <button class="dock__side" id="endBtn2" title="종료" aria-label="토론 종료">✕</button>
+    </div>
+  </section>
+</div>
+
+<!-- Apple modal -->
+<div class="scrim" id="scrim" data-open="false">
+  <div class="modal" role="alertdialog" aria-modal="true" aria-labelledby="mTitle" aria-describedby="mMsg">
+    <div class="modal__icon" id="mIcon">✕</div>
+    <h3 class="modal__title" id="mTitle"></h3>
+    <p class="modal__msg" id="mMsg"></p>
+    <div class="modal__actions" id="mActions"></div>
+  </div>
+</div>
+
+<script>
+/*═══════════════════════════════════════════════════════════════════
+ * 설정 — 배포 후 아래 GAS_URL 을 본인 웹앱 URL로 교체하세요.
+ *═══════════════════════════════════════════════════════════════════*/
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwM7EObRqkShuM0LClYYx5fx2lwKSJsaT8AwpCTsB-uk1BsFdwR5QqktantLqp-VApV/exec";  
+const SESSION_MINUTES = 15;                              // 세션 제한 시간(분)
+const INPUT_RATE = 16000, OUTPUT_RATE = 24000;
+
+const CAT_EMOJI = { A:'🎈', B:'🏫', C:'⚖️', D:'🌐', E:'🌱' };
+
+const $ = s => document.querySelector(s);
+const shell=$('#shell'), scrim=$('#scrim');
+
+/*── 상태 ──*/
+const S = {
+  topic:'', category:'', stance:'', session:null,
+  ws:null, inCtx:null, outCtx:null, stream:null, proc:null, micOn:false,
+  playHead:0, sources:[], aiSpeaking:false, connected:false,
+  transcript:[], aiBubble:null, meBubble:null,
+  timer:null, remain:SESSION_MINUTES*60,
+};
+
+/*═══ 화면 전환 ═══*/
+const setScreen = s => shell.dataset.state = s;
+
+/*═══ 모달 ═══*/
+function showModal({icon='✕', warn=false, title, msg='', actions=[]}){
+  $('#mIcon').textContent=icon;
+  $('#mIcon').className='modal__icon'+(warn?' modal__icon--warn':'');
+  $('#mTitle').textContent=title; $('#mMsg').textContent=msg;
+  const wrap=$('#mActions'); wrap.innerHTML='';
+  actions.forEach(a=>{
+    const b=document.createElement('button');
+    b.className='btn '+(a.style||'btn--ghost'); b.textContent=a.label;
+    b.onclick=()=>{ if(!a.keepOpen) closeModal(); a.onClick&&a.onClick(); };
+    wrap.appendChild(b);
+  });
+  scrim.dataset.open='true';
+}
+const closeModal=()=>scrim.dataset.open='false';
+scrim.onclick=e=>{ if(e.target===scrim) closeModal(); };
+
+/*═══ 주제 로딩 (GAS: action=topics) ═══*/
+async function loadTopics(){
+  const list=$('#topicList');
+  list.innerHTML='<div class="home-empty">주제를 불러오는 중…</div>';
+  if(GAS_URL.startsWith('여기에')){
+    list.innerHTML='<div class="home-empty">GAS 웹앱 URL이 설정되지 않았어요.</div>';
+    showModal({icon:'⚙︎', title:'설정이 필요해요',
+      msg:'코드 상단의 GAS_URL 을 배포된 웹앱 주소로 바꾸면 주제가 나타나요.',
+      actions:[{label:'확인', style:'btn--primary'}]});
+    return;
+  }
+  try{
+    const res=await fetch(GAS_URL+'?action=topics');
+    const data=await res.json();
+    if(!data.ok) throw new Error(data.error||'주제를 불러오지 못했어요.');
+    renderTopics(data.topics||[]);
+  }catch(err){
+    list.innerHTML='<div class="home-empty">주제를 불러오지 못했어요.<br/>새로고침을 눌러 다시 시도해 주세요.</div>';
+    showModal({icon:'!', warn:true, title:'연결에 실패했어요',
+      msg:String(err.message||err), actions:[{label:'다시 시도', style:'btn--primary', onClick:loadTopics}]});
+  }
+}
+
+function renderTopics(topics){
+  const list=$('#topicList');
+  if(!topics.length){ list.innerHTML='<div class="home-empty">등록된 주제가 없어요.</div>'; return; }
+  const groups={};
+  topics.forEach(t=>{ const k=t.category||'기타'; (groups[k]=groups[k]||[]).push(t); });
+  list.innerHTML='';
+  Object.keys(groups).sort().forEach(cat=>{
+    const label=document.createElement('div'); label.className='cat-label';
+    label.textContent=cat; list.appendChild(label);
+    groups[cat].forEach(t=>{
+      const emoji=CAT_EMOJI[(cat.trim()[0]||'').toUpperCase()]||'💬';
+      const card=document.createElement('button');
+      card.className='topic-card'; card.setAttribute('aria-selected','false');
+      card.innerHTML=`<span class="topic-card__emoji">${emoji}</span>
+        <span class="topic-card__txt"></span><span class="topic-card__chev">›</span>`;
+      card.querySelector('.topic-card__txt').textContent=t.agenda;
+      card.onclick=()=>selectTopic(card, t);
+      list.appendChild(card);
+    });
+  });
+}
+
+function selectTopic(card, t){
+  document.querySelectorAll('.topic-card').forEach(c=>c.setAttribute('aria-selected','false'));
+  card.setAttribute('aria-selected','true');
+  S.topic=t.agenda; S.category=t.category||'';
+  $('#pickedTopic').textContent=t.agenda;
+  $('#splitDock').hidden=false;
+  card.scrollIntoView({block:'nearest', behavior:'smooth'});
+}
+
+/*═══ 토론 시작 ═══*/
+$('#pickPro').onclick=()=>beginDebate('pro');
+$('#pickCon').onclick=()=>beginDebate('con');
+
+async function beginDebate(stance){
+  S.stance=stance;
+  // live 화면 초기화
+  $('#liveTopic').textContent=S.topic;
+  const chip=$('#liveStance');
+  chip.textContent = stance==='pro' ? '나 · 찬성' : '나 · 반대';
+  chip.className='stance-chip '+(stance==='pro'?'stance-chip--pro':'stance-chip--con');
+  $('#transcript').innerHTML='<div class="hint">연결하고 있어요.<br/>이어폰을 쓰면 소리가 더 깨끗해요.</div>';
+  S.transcript=[]; S.aiBubble=null; S.meBubble=null;
+  setStatus('connect','연결 중…'); setScreen('live');
+
+  try{
+    const res=await fetch(GAS_URL,{
+      method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body:JSON.stringify({action:'session', agenda:S.topic, stance})
+    });
+    const data=await res.json();
+    if(!data.ok) throw new Error(data.error||'세션을 만들지 못했어요.');
+    S.session=data;
+    await connectLive(data);
+  }catch(err){
+    setStatus('connect','연결 실패');
+    showModal({icon:'!', warn:true, title:'토론을 시작하지 못했어요',
+      msg:String(err.message||err),
+      actions:[{label:'주제로 돌아가기', style:'btn--primary', onClick:()=>endDebate(false)}]});
+  }
+}
+
+/*═══ Live API 연결 ═══*/
+function connectLive(session){
+  return new Promise((resolve,reject)=>{
+    let opened=false;
+    const ws=new WebSocket(session.wsUrl);
+    S.ws=ws;
+    ws.onopen=()=>{
+      opened=true;
+      ws.send(JSON.stringify({ setup:{
+        model:'models/'+session.model,
+        systemInstruction:{ parts:[{ text:session.systemInstruction }] },
+        outputAudioTranscription:{},   // setup 최상위 → 잠긴 generationConfig 밖이라 주입 가능
+        inputAudioTranscription:{}
+      }}));
+    };
+    ws.onmessage=async ev=>{
+      const text = ev.data instanceof Blob ? await ev.data.text() : ev.data;
+      let msg; try{ msg=JSON.parse(text); }catch(e){ return; }
+      handleServer(msg, resolve);
+    };
+    ws.onerror=()=>{ if(!opened) reject(new Error('음성 서버에 연결하지 못했어요.')); };
+    ws.onclose=ev=>{
+      if(!opened){ reject(new Error('연결이 종료되었어요. (코드 '+ev.code+')')); return; }
+      if(S.connected && shell.dataset.state==='live'){
+        setStatus('connect','연결 종료됨');
+      }
+    };
+  });
+}
+
+async function handleServer(msg, resolveConnect){
+  if(msg.setupComplete){
+    S.connected=true;
+    await startMic();
+    // AI가 먼저 입장을 밝히도록 킥오프
+    S.aiSpeaking=true; setStatus('speak','AI 말하는 중…');
+    S.ws.send(JSON.stringify({ clientContent:{
+      turns:[{ role:'user', parts:[{ text:'이제 토론을 시작하자. 네 입장을 한두 문장으로 간단히 밝히고, 내 생각을 물어봐.' }]}],
+      turnComplete:true
+    }}));
+    $('#transcript').innerHTML=''; // hint 제거
+    $('#micBtn').disabled=false; $('#micBtn').dataset.on='true'; S.micOn=true;
+    $('#saveBtn').disabled=false;
+    startTimer();
+    resolveConnect&&resolveConnect();
+    return;
+  }
+  const sc=msg.serverContent;
+  if(!sc) return;
+
+  // AI 음성
+  const parts=sc.modelTurn&&sc.modelTurn.parts||[];
+  for(const p of parts){
+    if(p.inlineData&&p.inlineData.data){ S.aiSpeaking=true; setStatus('speak','AI 말하는 중…'); playChunk(p.inlineData.data); }
+  }
+  // 자막
+  const outT = sc.outputTranscription || msg.outputTranscription;
+  const inT  = sc.inputTranscription  || msg.inputTranscription;
+  if(outT&&outT.text!=null){ closeMe(); appendAi(outT.text); }
+  if(inT &&inT.text!=null){ closeAi(); appendMe(inT.text); }
+
+  if(sc.interrupted){ stopOutput(); S.aiSpeaking=false; setStatus('listen','듣는 중…'); }
+  if(sc.turnComplete){ finishAiTurn(); }
+}
+
+function finishAiTurn(){
+  closeAi();
+  const remain=Math.max(0,(S.playHead-(S.outCtx?S.outCtx.currentTime:0)));
+  setTimeout(()=>{ if(shell.dataset.state!=='live')return;
+    S.aiSpeaking=false; if(S.micOn) setStatus('listen','듣는 중…'); }, remain*1000+180);
+}
+
+/*═══ 자막 렌더링 ═══*/
+function appendAi(t){
+  if(!S.aiBubble){ S.aiBubble=makeTurn('ai','AI · '+(S.stance==='pro'?'반대':'찬성')); S.transcript.push({who:'ai',text:''}); }
+  S.aiBubble.textContent+=t; S.transcript[S.transcript.length-1].text=S.aiBubble.textContent; scrollDown();
+}
+function appendMe(t){
+  if(!S.meBubble){ S.meBubble=makeTurn('me','나 · '+(S.stance==='pro'?'찬성':'반대')); S.transcript.push({who:'me',text:''}); }
+  S.meBubble.textContent+=t; S.transcript[S.transcript.length-1].text=S.meBubble.textContent; scrollDown();
+}
+const closeAi=()=>S.aiBubble=null;
+const closeMe=()=>S.meBubble=null;
+function makeTurn(who,label){
+  const t=document.createElement('div'); t.className='turn turn--'+who;
+  const w=document.createElement('span'); w.className='turn__who'; w.textContent=label;
+  const b=document.createElement('div'); b.className='bubble';
+  t.appendChild(w); t.appendChild(b); $('#transcript').appendChild(t); scrollDown(); return b;
+}
+function scrollDown(){ const el=$('#transcript'); el.scrollTop=el.scrollHeight; }
+
+/*═══ 마이크 입력 (16kHz PCM) — AI 발화 중엔 게이팅(반이중) ═══*/
+async function startMic(){
+  S.stream=await navigator.mediaDevices.getUserMedia({ audio:{
+    echoCancellation:true, noiseSuppression:true, autoGainControl:true,
+    channelCount:1
+  }});
+  S.inCtx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:INPUT_RATE});
+  if(S.inCtx.state==='suspended') await S.inCtx.resume();
+  const src=S.inCtx.createMediaStreamSource(S.stream);
+  const proc=S.inCtx.createScriptProcessor(4096,1,1); S.proc=proc;
+  proc.onaudioprocess=e=>{
+    if(!S.connected||!S.micOn||S.aiSpeaking) return;              // AI 말할 땐 송신 안 함
+    if(S.ws.readyState!==WebSocket.OPEN) return;
+    const f32=e.inputBuffer.getChannelData(0);
+    const pcm=floatTo16k(f32, S.inCtx.sampleRate);
+    S.ws.send(JSON.stringify({ realtimeInput:{ audio:{ data:int16ToB64(pcm), mimeType:'audio/pcm;rate=16000' }}}));
+  };
+  src.connect(proc); proc.connect(S.inCtx.destination);
+}
+
+/* ctx.sampleRate → 16kHz 리샘플 + Float→Int16 */
+function floatTo16k(f32, srcRate){
+  let data=f32;
+  if(srcRate!==INPUT_RATE){
+    const ratio=srcRate/INPUT_RATE, len=Math.round(f32.length/ratio), out=new Float32Array(len);
+    for(let i=0;i<len;i++){ const idx=i*ratio, i0=Math.floor(idx), i1=Math.min(i0+1,f32.length-1);
+      out[i]=f32[i0]+(f32[i1]-f32[i0])*(idx-i0); }
+    data=out;
+  }
+  const pcm=new Int16Array(data.length);
+  for(let i=0;i<data.length;i++){ const s=Math.max(-1,Math.min(1,data[i])); pcm[i]=s<0?s*0x8000:s*0x7FFF; }
+  return pcm;
+}
+function int16ToB64(int16){
+  const bytes=new Uint8Array(int16.buffer); let bin='';
+  for(let i=0;i<bytes.length;i+=0x8000) bin+=String.fromCharCode.apply(null,bytes.subarray(i,i+0x8000));
+  return btoa(bin);
+}
+
+/*═══ AI 음성 재생 (24kHz PCM 스케줄링) ═══*/
+function playChunk(b64){
+  if(!S.outCtx){ S.outCtx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:OUTPUT_RATE}); S.playHead=0; }
+  const bin=atob(b64), len=bin.length, bytes=new Uint8Array(len);
+  for(let i=0;i<len;i++) bytes[i]=bin.charCodeAt(i);
+  const int16=new Int16Array(bytes.buffer), f32=new Float32Array(int16.length);
+  for(let i=0;i<int16.length;i++) f32[i]=int16[i]/32768;
+  const buf=S.outCtx.createBuffer(1,f32.length,OUTPUT_RATE); buf.getChannelData(0).set(f32);
+  const node=S.outCtx.createBufferSource(); node.buffer=buf; node.connect(S.outCtx.destination);
+  const now=S.outCtx.currentTime; const start=Math.max(now,S.playHead);
+  node.start(start); S.playHead=start+buf.duration; S.sources.push(node);
+  node.onended=()=>{ S.sources=S.sources.filter(n=>n!==node); };
+}
+function stopOutput(){ S.sources.forEach(n=>{try{n.stop()}catch(e){}}); S.sources=[]; if(S.outCtx) S.playHead=S.outCtx.currentTime; }
+
+/*═══ 마이크 토글 ═══*/
+$('#micBtn').onclick=()=>{
+  S.micOn=!S.micOn; $('#micBtn').dataset.on=String(S.micOn);
+  if(S.micOn && !S.aiSpeaking) setStatus('listen','듣는 중…');
+  else if(!S.micOn) setStatus('connect','마이크 꺼짐');
+};
+
+/*═══ 상태 표시 ═══*/
+function setStatus(mode,txt){
+  const pill=$('#statusPill'); pill.dataset.mode=mode; $('#statusTxt').textContent=txt;
+}
+
+/*═══ 세션 타이머 ═══*/
+function startTimer(){
+  S.remain=SESSION_MINUTES*60; $('#timeChip').hidden=false; tick();
+  S.timer=setInterval(tick,1000);
+}
+function tick(){
+  const m=String(Math.floor(S.remain/60)).padStart(2,'0'), s=String(S.remain%60).padStart(2,'0');
+  $('#timeChip').textContent=m+':'+s;
+  if(S.remain<=0){ clearInterval(S.timer);
+    cleanup();
+    showModal({icon:'⏱', title:'토론 시간이 끝났어요', msg:'수고했어요! 나눈 대화를 저장할 수 있어요.',
+      actions:[
+        {label:'대화 저장하기', style:'btn--primary', onClick:saveTranscript},
+        {label:'주제로 돌아가기', onClick:()=>setScreen('home')}
+      ]});
+    return;
+  }
+  S.remain--;
+}
+
+/*═══ 종료 ═══*/
+function askEnd(){
+  showModal({icon:'✕', warn:true, title:'토론을 종료할까요?',
+    msg:'지금까지 나눈 대화는 저장하지 않으면 사라져요.',
+    actions:[
+      {label:'저장 후 종료', style:'btn--primary', onClick:()=>{ saveTranscript(); endDebate(false); }},
+      {label:'계속 토론하기'}
+    ]});
+}
+$('#endBtn').onclick=askEnd; $('#endBtn2').onclick=askEnd;
+
+function endDebate(){ cleanup(); setScreen('home'); $('#splitDock').hidden=true; }
+
+function cleanup(){
+  S.connected=false; S.micOn=false; S.aiSpeaking=false;
+  if(S.timer){ clearInterval(S.timer); S.timer=null; }
+  stopOutput();
+  try{ S.ws&&S.ws.close(); }catch(e){} S.ws=null;
+  try{ S.proc&&(S.proc.onaudioprocess=null,S.proc.disconnect()); }catch(e){}
+  try{ S.stream&&S.stream.getTracks().forEach(t=>t.stop()); }catch(e){}
+  try{ S.inCtx&&S.inCtx.close(); }catch(e){} S.inCtx=null;
+  try{ S.outCtx&&S.outCtx.close(); }catch(e){} S.outCtx=null;
+  $('#micBtn').disabled=true; $('#micBtn').dataset.on='false'; $('#saveBtn').disabled=true;
+  $('#timeChip').hidden=true;
+}
+
+/*═══ 대화 저장 (서식형 텍스트 다운로드) ═══*/
+$('#saveBtn').onclick=saveTranscript;
+function saveTranscript(){
+  if(!S.transcript.length){
+    showModal({icon:'ⓘ', title:'저장할 대화가 없어요', msg:'토론을 나눈 뒤 저장할 수 있어요.',
+      actions:[{label:'확인', style:'btn--primary'}]}); return;
+  }
+  const stance=S.stance==='pro'?'찬성':'반대', aiStance=S.stance==='pro'?'반대':'찬성';
+  const lines=S.transcript.filter(x=>x.text.trim()).map(x=>{
+    const who=x.who==='me'?'나('+stance+')':'AI('+aiStance+')';
+    return '['+who+'] '+x.text.trim();
+  });
+  const out=['찬반 토론 기록','주제: '+S.topic,'내 입장: '+stance+'  ·  AI 입장: '+aiStance,
+    '일시: '+new Date().toLocaleString('ko-KR'),'─'.repeat(24),'',...lines,''].join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([out],{type:'text/plain;charset=utf-8'}));
+  a.download='토론기록_'+S.topic.slice(0,20)+'.txt'; a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+/*═══ 시작 ═══*/
+$('#reloadBtn').onclick=loadTopics;
+loadTopics();
+</script>
+</body>
+</html>
