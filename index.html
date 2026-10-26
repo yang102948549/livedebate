@@ -54,9 +54,6 @@ button{font:inherit}
 .icon-btn{width:34px; height:34px; border:0; background:#F0F0F2; border-radius:50%;
   display:grid; place-items:center; cursor:pointer; color:var(--ink-2); font-size:15px; transition:.2s}
 .icon-btn:active{transform:scale(.92)}
-.stance-chip{font-size:12px; font-weight:700; padding:5px 10px; border-radius:var(--r-pill); white-space:nowrap}
-.stance-chip--pro{background:var(--pro-soft); color:var(--pro)}
-.stance-chip--con{background:var(--con-soft); color:var(--con-ink)}
 
 /* ── HOME ── */
 .screen--home .body{flex:1; overflow:auto; padding:22px 20px 16px}
@@ -105,13 +102,10 @@ button{font:inherit}
 
 /* 문자 메시지형 말풍선 : AI = 왼쪽, 나 = 오른쪽 / 색은 입장(찬성=파랑, 반대=주황)을 따름 */
 .transcript{flex:1; overflow:auto; padding:6px 16px 12px; display:flex; flex-direction:column; gap:2px}
-.turn{display:flex; align-items:flex-end; gap:8px; margin-top:14px}
-.turn--ai{flex-direction:row; justify-content:flex-start}
-.turn--me{flex-direction:row-reverse; justify-content:flex-start}
-.turn__avatar{width:30px; height:30px; flex-shrink:0; border-radius:50%; display:grid; place-items:center;
-  font-size:11px; font-weight:800; color:#fff; margin-bottom:2px}
-.turn--pro .turn__avatar{background:var(--pro)} .turn--con .turn__avatar{background:var(--con)}
-.turn__col{display:flex; flex-direction:column; max-width:78%; min-width:0}
+.turn{display:flex; margin-top:14px}
+.turn--ai{justify-content:flex-start}
+.turn--me{justify-content:flex-end}
+.turn--pro .turn__col{display:flex; flex-direction:column; max-width:78%; min-width:0}
 .turn--ai .turn__col{align-items:flex-start} .turn--me .turn__col{align-items:flex-end}
 .turn__who{font-size:11px; font-weight:700; color:var(--ink-3); margin:0 8px 4px}
 .bubble{padding:10px 14px; font-size:15.5px; line-height:1.45; letter-spacing:-.01em;
@@ -121,7 +115,6 @@ button{font:inherit}
 .turn--me .bubble{border-bottom-right-radius:6px}
 .turn--live .bubble::after{content:"▍"; margin-left:2px; opacity:.7; animation:blink 1s steps(2) infinite}
 @keyframes blink{50%{opacity:0}}
-.legend{display:none}
 @keyframes bubbleIn{from{opacity:0; transform:translateY(6px) scale(.98)} to{opacity:1; transform:none}}
 .hint{color:var(--ink-3); font-size:13px; text-align:center; margin:22px auto; max-width:26ch; line-height:1.5}
 
@@ -176,7 +169,6 @@ button{font:inherit}
   .bar__title{font-size:22px} .bar__title small{font-size:13px}
   .bar__title span{max-width:60vw}
   .icon-btn{width:40px; height:40px; font-size:17px}
-  .stance-chip{font-size:15px; padding:7px 14px}
   #fsBtn{display:grid}
 
   /* HOME : 주제 2열 + 하단 입장 선택 */
@@ -194,28 +186,16 @@ button{font:inherit}
   .split{max-width:640px; margin:0 auto}
   .split button{font-size:21px; padding:20px 0}
 
-  /* LIVE : 좌측 사이드(상태·범례·컨트롤) + 우측 대화 */
-  .screen--live{display:none}
-  .app-shell[data-state="live"] .screen--live{
-    display:grid; grid-template-columns:320px 1fr; grid-template-rows:auto auto 1fr;
-    grid-template-areas:"bar bar" "status transcript" "dock transcript"}
-  .screen--live .bar{grid-area:bar}
-  .live-status{grid-area:status; flex-direction:column; align-items:flex-start; gap:12px; padding:28px 28px 8px}
+  /* LIVE : 한 칼럼, 넓은 대화 영역 */
+  .live-status{padding:16px 0 10px; gap:16px}
   .pill{font-size:16px; padding:9px 18px}
-  .time-chip{font-size:44px; font-weight:700; color:var(--ink); letter-spacing:-.02em}
-  .legend{display:flex; flex-direction:column; gap:10px; margin-top:6px; font-size:15px; font-weight:600}
-  .legend span{display:flex; align-items:center; gap:10px}
-  .legend i{width:14px; height:14px; border-radius:50%; display:inline-block}
-  .legend .l-pro i{background:var(--pro)} .legend .l-con i{background:var(--con)}
-  .dock{grid-area:dock; flex-direction:row; justify-content:flex-start; align-items:flex-start;
-    border-top:0; padding:20px 28px; gap:16px}
+  .time-chip{font-size:20px}
+  .dock{padding:16px 28px 22px; gap:24px}
   .mic{width:84px; height:84px; font-size:30px}
-  .dock__side{width:56px; height:56px; margin-top:14px}
-  .transcript{grid-area:transcript; padding:20px 48px 28px; border-left:1px solid var(--hairline);
-    background:var(--surface-2); gap:4px}
-  .turn{margin-top:20px; gap:12px}
-  .turn__avatar{width:44px; height:44px; font-size:15px}
-  .turn__col{max-width:70%}
+  .dock__side{width:56px; height:56px}
+  .transcript{padding:8px max(48px,calc((100% - 1000px)/2)) 24px; gap:4px}
+  .turn{margin-top:20px}
+    .turn__col{max-width:70%}
   .turn__who{font-size:14px; margin-bottom:6px}
   .bubble{font-size:24px; line-height:1.5; padding:14px 22px; border-radius:26px}
   .turn--ai .bubble{border-bottom-left-radius:8px}
@@ -223,10 +203,7 @@ button{font:inherit}
   .hint{font-size:20px; max-width:34ch}
   .modal{max-width:400px}
 }
-@media (min-width:1500px){
-  .bubble{font-size:28px}
-  .screen--live{grid-template-columns:360px 1fr}
-}
+@media (min-width:1500px){ .bubble{font-size:28px} }
 @media (max-width:520px){
   body{padding:0}
   .app-shell{max-width:none; height:100dvh; border-radius:0; border:0; box-shadow:none}
@@ -269,14 +246,12 @@ button{font:inherit}
       <div class="bar__title"><span id="liveTopic">주제</span><small>실시간 음성 토론</small></div>
       <div class="bar__spacer"></div>
       <button class="icon-btn" id="fsBtn" title="전체화면" aria-label="전체화면">⛶</button>
-      <span class="stance-chip stance-chip--pro" id="liveStance">나 · 찬성</span>
     </div>
     <div class="live-status">
       <span class="pill" id="statusPill" data-mode="connect">
         <span class="dot" id="statusDot"></span><span id="statusTxt">연결 중…</span>
       </span>
       <span class="time-chip" id="timeChip" hidden>00:00</span>
-      <div class="legend"><span class="l-me"><i></i><b id="legendMe"></b></span><span class="l-ai"><i></i><b id="legendAi"></b></span></div>
     </div>
     <div class="transcript" id="transcript" aria-live="polite"></div>
     <div class="dock">
@@ -416,14 +391,7 @@ async function beginDebate(stance){
   S.stance=stance;
   // live 화면 초기화
   $('#liveTopic').textContent=S.topic;
-  const chip=$('#liveStance');
-  chip.textContent = stance==='pro' ? '나 · 찬성' : '나 · 반대';
-  chip.className='stance-chip '+(stance==='pro'?'stance-chip--pro':'stance-chip--con');
   $('#transcript').innerHTML='<div class="hint">연결하고 있어요.<br/>이어폰을 쓰면 소리가 더 깨끗해요.</div>';
-  $('#legendMe').textContent='나 · '+stanceKo(stance);
-  $('#legendAi').textContent='AI · '+stanceKo(stance==='pro'?'con':'pro');
-  document.querySelector('.l-me').className='l-me l-'+stance;
-  document.querySelector('.l-ai').className='l-ai l-'+(stance==='pro'?'con':'pro');
   S.transcript=[]; S.aiBubble=null; S.meBubble=null;
   setStatus('connect','연결 중…'); setScreen('live');
 
@@ -550,11 +518,10 @@ function closeAi(){ closeBubble(S.aiBubble); S.aiBubble=null; }
 function closeMe(){ closeBubble(S.meBubble); S.meBubble=null; }
 function makeTurn(who,label,stance){
   const t=document.createElement('div'); t.className='turn turn--'+who+' turn--'+stance+' turn--live';
-  const av=document.createElement('div'); av.className='turn__avatar'; av.textContent=who==='me'?'나':'AI';
   const col=document.createElement('div'); col.className='turn__col';
   const w=document.createElement('span'); w.className='turn__who'; w.textContent=label;
   const b=document.createElement('div'); b.className='bubble';
-  col.appendChild(w); col.appendChild(b); t.appendChild(av); t.appendChild(col);
+  col.appendChild(w); col.appendChild(b); t.appendChild(col);
   $('#transcript').appendChild(t);
   const entry={who,text:''}; S.transcript.push(entry);
   scrollDown(); return {turn:t, el:b, entry};
