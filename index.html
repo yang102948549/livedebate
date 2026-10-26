@@ -280,15 +280,15 @@ const GAS_URL = "https://script.google.com/macros/s/AKfycbwM7EObRqkShuM0LClYYx5f
 const SESSION_MINUTES = 15;                              // 세션 제한 시간(분)
 const INPUT_RATE = 16000, OUTPUT_RATE = 24000;
 
-// 사용할 Gemini Live 모델 ID. 비워 두면 GAS(session.model)가 내려준 모델을 그대로 씁니다.
-// ※ GAS 쪽에서 토큰 발급 시 모델을 고정해 두었다면 GAS 의 model 값도 같이 바꿔야 합니다.
-const LIVE_MODEL = "gemini-3.8-live";
+// 모델은 GAS 가 임시 토큰에 잠가서 내려주므로(session.model) 여기서는 바꾸지 않는다.
+// 모델 변경: code.gs 의 DEFAULT_MODEL (또는 시트 메뉴의 모델명 설정). 토큰과 다른 모델을 쓰면 연결이 거부됨.
+const LIVE_MODEL = "";
 
 // 대화를 더 자연스럽게 만드는 공통 지침 (GAS 시스템 프롬프트 뒤에 덧붙임)
 const STYLE_GUIDE = `
 [대화 방식]
 - 실제 사람과 말하듯 자연스러운 구어체 한국어로 말해. 문어체·목록·마크다운·이모지는 쓰지 마.
-- 한 번에 1~3문장, 길어도 15초 안에 끝내. 한 턴에 주장은 하나만 하고 마지막은 짧은 질문이나 반론 유도로 마무리해.
+- 한 번에 2~3문장, 길어도 15초 안에 끝내. 한 턴에 주장은 하나만 하고 마지막은 짧은 질문으로 마무리해.
 - 상대(학생)의 말을 먼저 한 구절로 받아주고(예: "아, 그 부분은 맞는데요") 그다음 네 입장에서 근거를 들어 반박해.
 - 상대 말이 끊기거나 불분명하면 추측하지 말고 "다시 한번 말해 줄래요?"라고 짧게 물어봐.
 - 같은 말을 반복하지 말고, 이전 대화에서 나온 내용을 근거로 이어서 말해.
