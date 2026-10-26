@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<hang="ko">
+<html lang="ko">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
@@ -54,9 +54,6 @@ button{font:inherit}
 .icon-btn{width:34px; height:34px; border:0; background:#F0F0F2; border-radius:50%;
   display:grid; place-items:center; cursor:pointer; color:var(--ink-2); font-size:15px; transition:.2s}
 .icon-btn:active{transform:scale(.92)}
-.stance-chip{font-size:12px; font-weight:700; padding:5px 10px; border-radius:var(--r-pill); white-space:nowrap}
-.stance-chip--pro{background:var(--pro-soft); color:var(--pro)}
-.stance-chip--con{background:var(--con-soft); color:var(--con-ink)}
 
 /* ── HOME ── */
 .screen--home .body{flex:1; overflow:auto; padding:22px 20px 16px}
@@ -103,14 +100,21 @@ button{font:inherit}
   border-top-color:var(--blue); animation:spin .8s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 
+/* 문자 메시지형 말풍선 : AI = 왼쪽, 나 = 오른쪽 / 색은 입장(찬성=파랑, 반대=주황)을 따름 */
 .transcript{flex:1; overflow:auto; padding:6px 16px 12px; display:flex; flex-direction:column; gap:2px}
-.turn{display:flex; flex-direction:column; margin-top:12px}
-.turn--me{align-items:flex-end} .turn--ai{align-items:flex-start}
-.turn__who{font-size:11px; font-weight:700; color:var(--ink-3); margin:0 6px 5px}
-.bubble{max-width:80%; padding:10px 14px; font-size:15.5px; line-height:1.42; letter-spacing:-.01em;
-  border-radius:20px; word-break:break-word; white-space:pre-wrap; animation:bubbleIn .3s var(--ease)}
-.turn--ai .bubble{background:var(--ai-bubble); color:var(--ink); border-bottom-left-radius:7px}
-.turn--me .bubble{background:var(--me-bubble); color:#fff; border-bottom-right-radius:7px}
+.turn{display:flex; margin-top:14px}
+.turn--ai{justify-content:flex-start}
+.turn--me{justify-content:flex-end}
+.turn--pro .turn__col{display:flex; flex-direction:column; max-width:78%; min-width:0}
+.turn--ai .turn__col{align-items:flex-start} .turn--me .turn__col{align-items:flex-end}
+.turn__who{font-size:11px; font-weight:700; color:var(--ink-3); margin:0 8px 4px}
+.bubble{padding:10px 14px; font-size:15.5px; line-height:1.45; letter-spacing:-.01em;
+  border-radius:20px; word-break:break-word; white-space:pre-wrap; color:#fff; animation:bubbleIn .3s var(--ease)}
+.turn--pro .bubble{background:var(--pro)} .turn--con .bubble{background:var(--con)}
+.turn--ai .bubble{border-bottom-left-radius:6px}
+.turn--me .bubble{border-bottom-right-radius:6px}
+.turn--live .bubble::after{content:"▍"; margin-left:2px; opacity:.7; animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
 @keyframes bubbleIn{from{opacity:0; transform:translateY(6px) scale(.98)} to{opacity:1; transform:none}}
 .hint{color:var(--ink-3); font-size:13px; text-align:center; margin:22px auto; max-width:26ch; line-height:1.5}
 
@@ -156,6 +160,50 @@ button{font:inherit}
 .modal__actions{display:flex; flex-direction:column; gap:9px; margin-top:20px}
 .modal__actions .btn{width:100%; text-align:center}
 
+/* ── 데스크탑(발표용) ── */
+#fsBtn{display:none}
+@media (min-width:900px){
+  body{padding:24px; font-size:19px}
+  .app-shell{max-width:1360px; height:calc(100dvh - 48px); border-radius:28px}
+  .bar{height:72px; padding:0 28px; gap:16px}
+  .bar__title{font-size:22px} .bar__title small{font-size:13px}
+  .bar__title span{max-width:60vw}
+  .icon-btn{width:40px; height:40px; font-size:17px}
+  #fsBtn{display:grid}
+
+  /* HOME : 주제 2열 + 하단 입장 선택 */
+  .screen--home .body{padding:36px 56px 24px}
+  .home-hero h2{font-size:40px}
+  .home-hero p{font-size:18px}
+  #topicList{display:grid; grid-template-columns:1fr 1fr; gap:12px 16px; align-items:stretch}
+  #topicList .cat-label{grid-column:1/-1; margin:14px 4px 0; font-size:14px}
+  #topicList .home-empty{grid-column:1/-1}
+  .topic-card{margin:0; padding:18px 20px}
+  .topic-card__txt{font-size:18px}
+  .topic-card__emoji{width:48px; height:48px; font-size:24px}
+  .split-dock{padding:18px 56px 24px}
+  .split-dock__q{font-size:16px}
+  .split{max-width:640px; margin:0 auto}
+  .split button{font-size:21px; padding:20px 0}
+
+  /* LIVE : 한 칼럼, 넓은 대화 영역 */
+  .live-status{padding:16px 0 10px; gap:16px}
+  .pill{font-size:16px; padding:9px 18px}
+  .time-chip{font-size:20px}
+  .dock{padding:16px 28px 22px; gap:24px}
+  .mic{width:84px; height:84px; font-size:30px}
+  .dock__side{width:56px; height:56px}
+  .transcript{padding:8px max(48px,calc((100% - 1000px)/2)) 24px; gap:4px}
+  .turn{margin-top:20px}
+    .turn__col{max-width:70%}
+  .turn__who{font-size:14px; margin-bottom:6px}
+  .bubble{font-size:24px; line-height:1.5; padding:14px 22px; border-radius:26px}
+  .turn--ai .bubble{border-bottom-left-radius:8px}
+  .turn--me .bubble{border-bottom-right-radius:8px}
+  .hint{font-size:20px; max-width:34ch}
+  .modal{max-width:400px}
+}
+@media (min-width:1500px){ .bubble{font-size:28px} }
 @media (max-width:520px){
   body{padding:0}
   .app-shell{max-width:none; height:100dvh; border-radius:0; border:0; box-shadow:none}
@@ -197,7 +245,7 @@ button{font:inherit}
       <button class="icon-btn" id="endBtn" title="종료" aria-label="토론 종료">✕</button>
       <div class="bar__title"><span id="liveTopic">주제</span><small>실시간 음성 토론</small></div>
       <div class="bar__spacer"></div>
-      <span class="stance-chip stance-chip--pro" id="liveStance">나 · 찬성</span>
+      <button class="icon-btn" id="fsBtn" title="전체화면" aria-label="전체화면">⛶</button>
     </div>
     <div class="live-status">
       <span class="pill" id="statusPill" data-mode="connect">
@@ -228,9 +276,14 @@ button{font:inherit}
 /*═══════════════════════════════════════════════════════════════════
  * 설정 — 배포 후 아래 GAS_URL 을 본인 웹앱 URL로 교체하세요.
  *═══════════════════════════════════════════════════════════════════*/
-const GAS_URL = "https://script.google.com/macros/s/AKfycbwM7EObRqkShuM0LClYYx5fx2lwKSJsaT8AwpCTsB-uk1BsFdwR5QqktantLqp-VApV/exec";  
+const GAS_URL = "https://script.google.com/macros/s/AKfycbwWUmPPdvuylAImo6vtCus7s1CvTRKAVxSNO-RkUWpd0C-WIWZOrDG_A0c4QSZ2mVg9/exec";  
 const SESSION_MINUTES = 15;                              // 세션 제한 시간(분)
 const INPUT_RATE = 16000, OUTPUT_RATE = 24000;
+
+// 모델은 GAS 가 임시 토큰에 잠가서 내려주므로(session.model) 여기서는 바꾸지 않는다.
+// 모델 변경: code.gs 의 DEFAULT_MODEL (또는 시트 메뉴의 모델명 설정). 토큰과 다른 모델을 쓰면 연결이 거부됨.
+const LIVE_MODEL = "";
+
 
 const CAT_EMOJI = { A:'🎈', B:'🏫', C:'⚖️', D:'🌐', E:'🌱' };
 
@@ -328,9 +381,6 @@ async function beginDebate(stance){
   S.stance=stance;
   // live 화면 초기화
   $('#liveTopic').textContent=S.topic;
-  const chip=$('#liveStance');
-  chip.textContent = stance==='pro' ? '나 · 찬성' : '나 · 반대';
-  chip.className='stance-chip '+(stance==='pro'?'stance-chip--pro':'stance-chip--con');
   $('#transcript').innerHTML='<div class="hint">연결하고 있어요.<br/>이어폰을 쓰면 소리가 더 깨끗해요.</div>';
   S.transcript=[]; S.aiBubble=null; S.meBubble=null;
   setStatus('connect','연결 중…'); setScreen('live');
@@ -348,7 +398,7 @@ async function beginDebate(stance){
     setStatus('connect','연결 실패');
     showModal({icon:'!', warn:true, title:'토론을 시작하지 못했어요',
       msg:String(err.message||err),
-      actions:[{label:'주제로 돌아가기', style:'btn--primary', onClick:()=>endDebate(false)}]});
+      actions:[{label:'주제로 돌아가기', style:'btn--primary', onClick:()=>endDebate()}]});
   }
 }
 
@@ -361,10 +411,19 @@ function connectLive(session){
     ws.onopen=()=>{
       opened=true;
       ws.send(JSON.stringify({ setup:{
-        model:'models/'+session.model,
+        model:'models/'+(LIVE_MODEL||session.model),
         systemInstruction:{ parts:[{ text:session.systemInstruction }] },
         outputAudioTranscription:{},   // setup 최상위 → 잠긴 generationConfig 밖이라 주입 가능
-        inputAudioTranscription:{}
+        inputAudioTranscription:{},
+        // 말이 끝났는지 판단하는 VAD: 너무 빨리 끊거나 늦게 끊지 않도록 조정
+        realtimeInputConfig:{ automaticActivityDetection:{
+          startOfSpeechSensitivity:'START_SENSITIVITY_HIGH',
+          endOfSpeechSensitivity:'END_SENSITIVITY_LOW',
+          prefixPaddingMs:200,
+          silenceDurationMs:900
+        }},
+        // 15분 세션이 길어져도 끊기지 않도록 오래된 맥락을 자동 압축
+        contextWindowCompression:{ slidingWindow:{} }
       }}));
     };
     ws.onmessage=async ev=>{
@@ -376,7 +435,14 @@ function connectLive(session){
     ws.onclose=ev=>{
       if(!opened){ reject(new Error('연결이 종료되었어요. (코드 '+ev.code+')')); return; }
       if(S.connected && shell.dataset.state==='live'){
-        setStatus('connect','연결 종료됨');
+        const hadChat=S.transcript.length>0;
+        cleanup(); setStatus('connect','연결 종료됨');
+        showModal({icon:'!', warn:true, title:'연결이 끊어졌어요',
+          msg:'서버와의 연결이 종료되었어요. 지금까지의 대화는 저장할 수 있어요.',
+          actions:[
+            ...(hadChat?[{label:'대화 저장하기', style:'btn--primary', onClick:saveTranscript}]:[]),
+            {label:'주제로 돌아가기', onClick:()=>endDebate()}
+          ]});
       }
     };
   });
@@ -388,9 +454,9 @@ async function handleServer(msg, resolveConnect){
     await startMic();
     // AI가 먼저 입장을 밝히도록 킥오프
     S.aiSpeaking=true; setStatus('speak','AI 말하는 중…');
-    S.ws.send(JSON.stringify({ clientContent:{
-      turns:[{ role:'user', parts:[{ text:'이제 토론을 시작하자. 네 입장을 한두 문장으로 간단히 밝히고, 내 생각을 물어봐.' }]}],
-      turnComplete:true
+    // 3.x Live 모델은 clientContent 를 초기 맥락 주입용으로만 허용 → 실시간 텍스트는 realtimeInput.text
+    S.ws.send(JSON.stringify({ realtimeInput:{
+      text:'이제 토론을 시작하자. 네 입장을 한두 문장으로 간단히 밝히고, 내 생각을 물어봐.'
     }}));
     $('#transcript').innerHTML=''; // hint 제거
     $('#micBtn').disabled=false; $('#micBtn').dataset.on='true'; S.micOn=true;
@@ -407,39 +473,48 @@ async function handleServer(msg, resolveConnect){
   for(const p of parts){
     if(p.inlineData&&p.inlineData.data){ S.aiSpeaking=true; setStatus('speak','AI 말하는 중…'); playChunk(p.inlineData.data); }
   }
-  // 자막
+  // 자막 (서버 필드 위치가 모델/버전마다 달라 둘 다 확인)
   const outT = sc.outputTranscription || msg.outputTranscription;
   const inT  = sc.inputTranscription  || msg.inputTranscription;
-  if(outT&&outT.text!=null){ closeMe(); appendAi(outT.text); }
+  // 내 말이 AI 말 뒤늦게 도착해도 순서가 뒤집히지 않도록: AI 말풍선이 열려 있어도 내 말은 그 앞에 끼워 넣지 않고 새 턴으로
   if(inT &&inT.text!=null){ closeAi(); appendMe(inT.text); }
+  if(outT&&outT.text!=null){ closeMe(); appendAi(outT.text); }
 
   if(sc.interrupted){ stopOutput(); S.aiSpeaking=false; setStatus('listen','듣는 중…'); }
   if(sc.turnComplete){ finishAiTurn(); }
 }
 
 function finishAiTurn(){
-  closeAi();
+  closeAi(); closeMe();
   const remain=Math.max(0,(S.playHead-(S.outCtx?S.outCtx.currentTime:0)));
   setTimeout(()=>{ if(shell.dataset.state!=='live')return;
     S.aiSpeaking=false; if(S.micOn) setStatus('listen','듣는 중…'); }, remain*1000+180);
 }
 
 /*═══ 자막 렌더링 ═══*/
+// 각 말풍선이 자기 기록(entry)을 직접 들고 있어, 끼어들기/지연 자막이 있어도 엉뚱한 줄에 쓰이지 않음
+const myStance=()=>S.stance, aiStance=()=>S.stance==='pro'?'con':'pro';
+const stanceKo=st=>st==='pro'?'찬성':'반대';
 function appendAi(t){
-  if(!S.aiBubble){ S.aiBubble=makeTurn('ai','AI · '+(S.stance==='pro'?'반대':'찬성')); S.transcript.push({who:'ai',text:''}); }
-  S.aiBubble.textContent+=t; S.transcript[S.transcript.length-1].text=S.aiBubble.textContent; scrollDown();
+  if(!S.aiBubble) S.aiBubble=makeTurn('ai','AI · '+stanceKo(aiStance()), aiStance());
+  S.aiBubble.el.textContent+=t; S.aiBubble.entry.text=S.aiBubble.el.textContent; scrollDown();
 }
 function appendMe(t){
-  if(!S.meBubble){ S.meBubble=makeTurn('me','나 · '+(S.stance==='pro'?'찬성':'반대')); S.transcript.push({who:'me',text:''}); }
-  S.meBubble.textContent+=t; S.transcript[S.transcript.length-1].text=S.meBubble.textContent; scrollDown();
+  if(!S.meBubble) S.meBubble=makeTurn('me','나 · '+stanceKo(myStance()), myStance());
+  S.meBubble.el.textContent+=t; S.meBubble.entry.text=S.meBubble.el.textContent; scrollDown();
 }
-const closeAi=()=>S.aiBubble=null;
-const closeMe=()=>S.meBubble=null;
-function makeTurn(who,label){
-  const t=document.createElement('div'); t.className='turn turn--'+who;
+function closeBubble(b){ if(b) b.turn.classList.remove('turn--live'); }
+function closeAi(){ closeBubble(S.aiBubble); S.aiBubble=null; }
+function closeMe(){ closeBubble(S.meBubble); S.meBubble=null; }
+function makeTurn(who,label,stance){
+  const t=document.createElement('div'); t.className='turn turn--'+who+' turn--'+stance+' turn--live';
+  const col=document.createElement('div'); col.className='turn__col';
   const w=document.createElement('span'); w.className='turn__who'; w.textContent=label;
   const b=document.createElement('div'); b.className='bubble';
-  t.appendChild(w); t.appendChild(b); $('#transcript').appendChild(t); scrollDown(); return b;
+  col.appendChild(w); col.appendChild(b); t.appendChild(col);
+  $('#transcript').appendChild(t);
+  const entry={who,text:''}; S.transcript.push(entry);
+  scrollDown(); return {turn:t, el:b, entry};
 }
 function scrollDown(){ const el=$('#transcript'); el.scrollTop=el.scrollHeight; }
 
@@ -454,10 +529,11 @@ async function startMic(){
   const src=S.inCtx.createMediaStreamSource(S.stream);
   const proc=S.inCtx.createScriptProcessor(4096,1,1); S.proc=proc;
   proc.onaudioprocess=e=>{
-    if(!S.connected||!S.micOn||S.aiSpeaking) return;              // AI 말할 땐 송신 안 함
-    if(S.ws.readyState!==WebSocket.OPEN) return;
+    if(!S.connected||!S.micOn) return;
+    if(!S.ws||S.ws.readyState!==WebSocket.OPEN) return;
     const f32=e.inputBuffer.getChannelData(0);
-    const pcm=floatTo16k(f32, S.inCtx.sampleRate);
+    // AI 말할 땐 스피커 에코가 끼어들기로 오인되지 않게 무음을 보냄 → 스트림은 끊기지 않아 서버 VAD가 정상 동작
+    const pcm=S.aiSpeaking ? new Int16Array(floatTo16k(f32, S.inCtx.sampleRate).length) : floatTo16k(f32, S.inCtx.sampleRate);
     S.ws.send(JSON.stringify({ realtimeInput:{ audio:{ data:int16ToB64(pcm), mimeType:'audio/pcm;rate=16000' }}}));
   };
   src.connect(proc); proc.connect(S.inCtx.destination);
@@ -501,7 +577,11 @@ function stopOutput(){ S.sources.forEach(n=>{try{n.stop()}catch(e){}}); S.source
 $('#micBtn').onclick=()=>{
   S.micOn=!S.micOn; $('#micBtn').dataset.on=String(S.micOn);
   if(S.micOn && !S.aiSpeaking) setStatus('listen','듣는 중…');
-  else if(!S.micOn) setStatus('connect','마이크 꺼짐');
+  else if(!S.micOn){
+    setStatus('connect','마이크 꺼짐');
+    // 마이크를 끌 때 진행 중이던 발화를 서버에 마무리시킴
+    try{ S.ws&&S.ws.readyState===WebSocket.OPEN&&S.ws.send(JSON.stringify({realtimeInput:{audioStreamEnd:true}})); }catch(e){}
+  }
 };
 
 /*═══ 상태 표시 ═══*/
@@ -522,7 +602,7 @@ function tick(){
     showModal({icon:'⏱', title:'토론 시간이 끝났어요', msg:'수고했어요! 나눈 대화를 저장할 수 있어요.',
       actions:[
         {label:'대화 저장하기', style:'btn--primary', onClick:saveTranscript},
-        {label:'주제로 돌아가기', onClick:()=>setScreen('home')}
+        {label:'주제로 돌아가기', onClick:()=>endDebate()}
       ]});
     return;
   }
@@ -534,7 +614,7 @@ function askEnd(){
   showModal({icon:'✕', warn:true, title:'토론을 종료할까요?',
     msg:'지금까지 나눈 대화는 저장하지 않으면 사라져요.',
     actions:[
-      {label:'저장 후 종료', style:'btn--primary', onClick:()=>{ saveTranscript(); endDebate(false); }},
+      {label:'저장 후 종료', style:'btn--primary', onClick:()=>{ saveTranscript(); endDebate(); }},
       {label:'계속 토론하기'}
     ]});
 }
@@ -574,6 +654,11 @@ function saveTranscript(){
   a.download='토론기록_'+S.topic.slice(0,20)+'.txt'; a.click();
   URL.revokeObjectURL(a.href);
 }
+
+/*═══ 전체화면 (발표용) ═══*/
+$('#fsBtn').onclick=()=>{
+  try{ document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); }catch(e){}
+};
 
 /*═══ 시작 ═══*/
 $('#reloadBtn').onclick=loadTopics;
