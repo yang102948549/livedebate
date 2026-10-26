@@ -23,7 +23,7 @@
 const PROPS = PropertiesService.getScriptProperties();
 
 const CONFIG = {
-  SHEET_NAME: '토론주제',
+  SHEET_NAME: '토론주제_v2',   // 열 구조: 사용 · 분류 · 어젠다 · AI가 찬성할 때 · AI가 반대할 때 (헤더 이름으로 인식)
   // ▼ Live 모델. 메뉴에서 GEMINI_MODEL 속성으로 덮어쓸 수 있음(속성이 있으면 그 값이 우선!).
   //   모델명은 자주 바뀌므로 AI Studio에서 현재 사용 가능한 이름을 확인해 갱신.
   //   이전 값: 'gemini-3.1-flash-live-preview'
@@ -137,36 +137,70 @@ function handleRequest_(p) {
 }
 
 /*───────────────────────────────────────────────────────────────────────
- * 시트 읽기 (컨테이너 바인딩 → getActive, 헤더행 제외)
- *  시트 구조: A 어젠다 · B AI 찬성 역할 · C AI 반대 역할 · D 분류(교사용, 로직 제외)
+ * 시트 읽기 (컨테이너 바인딩 → getActive)
+ *  시트 구조(1행 헤더, 열 순서는 바뀌어도 되고 '헤더 이름'으로 찾음):
+ *   사용(체크박스) · 분류 · 어젠다 · AI가 찬성할 때 프롬프트 · AI가 반대할 때 프롬프트
+ *  - '사용'이 체크 해제(FALSE)된 행은 주제 목록에서 숨김
+ *  - 학생 '찬성' → AI는 반대 → 'AI가 반대할 때' 열
+ *  - 학생 '반대' → AI는 찬성 → 'AI가 찬성할 때' 열
  *───────────────────────────────────────────────────────────────────────*/
-function getSheetRows_() {
+const COLS = {
+  use:      '사용',
+  category: '분류',
+  agenda:   '어젠다',
+  aiPro:    'AI가 찬성할 때',
+  aiCon:    'AI가 반대할 때',
+};
+
+/** 헤더에 키워드가 들어 있는 열 번호(0-base). 없으면 오류 */
+function colIndex_(headers, keyword, required) {
+  const i = headers.findIndex(h => String(h).indexOf(keyword) !== -1);
+  if (i < 0 && required) throw new Error("시트 헤더에서 '" + keyword + "' 열을 찾을 수 없습니다.");
+  return i;
+}
+
+/** [{ use, category, agenda, aiPro, aiCon }] */
+function getRows_() {
   const sh = SpreadsheetApp.getActive().getSheetByName(CONFIG.SHEET_NAME);
   if (!sh) throw new Error("시트 탭 '" + CONFIG.SHEET_NAME + "' 을 찾을 수 없습니다.");
-  return sh.getDataRange().getValues().slice(1); // 1행(헤더) 제외
+  const values = sh.getDataRange().getValues();
+  const h = values[0];
+  const ix = {
+    use:      colIndex_(h, COLS.use, false),
+    category: colIndex_(h, COLS.category, false),
+    agenda:   colIndex_(h, COLS.agenda, true),
+    aiPro:    colIndex_(h, COLS.aiPro, true),
+    aiCon:    colIndex_(h, COLS.aiCon, true),
+  };
+  return values.slice(1)
+    .map(r => ({
+      use:      ix.use < 0 ? true : (r[ix.use] === true || String(r[ix.use]).toUpperCase() === 'TRUE'),
+      category: ix.category < 0 ? '' : String(r[ix.category] || '').trim(),
+      agenda:   String(r[ix.agenda] || '').trim(),
+      aiPro:    String(r[ix.aiPro] || '').trim(),
+      aiCon:    String(r[ix.aiCon] || '').trim(),
+    }))
+    .filter(r => r.agenda !== '' && r.use);
 }
 
 /** 주제 카드용 목록: [{ agenda, category }] */
 function getTopics_() {
-  return getSheetRows_()
-    .filter(r => String(r[0]).trim() !== '')
-    .map(r => ({ agenda: String(r[0]).trim(), category: String(r[3] || '').trim() }));
+  return getRows_().map(r => ({ agenda: r.agenda, category: r.category }));
 }
 
 /*───────────────────────────────────────────────────────────────────────
  * 세션 생성: 어젠다 + 스탠스 → 프롬프트 조합 + 임시 토큰
- *  - 학생 '찬성'(pro) → AI 반대 → C열(index 2)
- *  - 학생 '반대'(con) → AI 찬성 → B열(index 1)
  *───────────────────────────────────────────────────────────────────────*/
 function getSession_(agenda, stance) {
   const studentPro = isProStance_(stance);
   const target = String(agenda).trim();
 
-  const row = getSheetRows_().filter(r => String(r[0]).trim() === target)[0];
+  const row = getRows_().filter(r => r.agenda === target)[0];
   if (!row) throw new Error('해당 어젠다를 시트에서 찾지 못했습니다: ' + target);
 
-  const stanceInstruction = String(studentPro ? row[2] : row[1]).trim();
-  if (!stanceInstruction) throw new Error('해당 입장의 프롬프트(B/C열)가 비어 있습니다.');
+  // 학생이 찬성이면 AI는 반대편 프롬프트를 사용
+  const stanceInstruction = studentPro ? row.aiCon : row.aiPro;
+  if (!stanceInstruction) throw new Error("해당 입장의 프롬프트('" + (studentPro ? COLS.aiCon : COLS.aiPro) + "' 열)가 비어 있습니다.");
 
   const systemInstruction = COMMON_INSTRUCTION + '\n\n' + stanceInstruction;
   const model = getModelName_();
